@@ -21,7 +21,7 @@ import static com.mt.mall.domain.model.tag.event.TagCriticalFieldChanged.TOPIC_T
 public class DomainEventSubscriber {
     private static final String SKU_QUEUE_NAME = "sku_queue";
     private static final String SKU_EX_QUEUE_NAME = "decrease_sku_for_order_event_mall_handler";
-    private static final String SKU_EX_QUEUE_NAME2 = "increase_sku_for_order_event_mall_handler";
+    private static final String SKU_EX_QUEUE_NAME3 = "cancel_decrease_sku_for_order_event_mall_handler";
     private static final String META_QUEUE_NAME = "meta_queue";
     @Value("${spring.application.name}")
     private String appName;
@@ -46,16 +46,16 @@ public class DomainEventSubscriber {
             log.debug("handling event with id {}", event.getId());
             SkuPatchCommandEvent deserialize = CommonDomainRegistry.getCustomObjectSerializer().deserialize(event.getEventBody(), SkuPatchCommandEvent.class);
             ApplicationServiceRegistry.getSkuApplicationService().handleDecreaseSkuChange(deserialize);
-        }, "decrease_sku_for_order_event");
+        }, "decrease_order_storage_event");
     }
 
     @EventListener(ApplicationReadyEvent.class)
-    private void skuExternalListener2() {
-        CommonDomainRegistry.getEventStreamService().subscribe(sagaName, false, SKU_EX_QUEUE_NAME2, (event) -> {
+    private void skuExternalListener3() {
+        CommonDomainRegistry.getEventStreamService().subscribe(sagaName, false, SKU_EX_QUEUE_NAME3, (event) -> {
             log.debug("handling event with id {}", event.getId());
             SkuPatchCommandEvent deserialize = CommonDomainRegistry.getCustomObjectSerializer().deserialize(event.getEventBody(), SkuPatchCommandEvent.class);
-            ApplicationServiceRegistry.getSkuApplicationService().handleIncreaseSkuChange(deserialize);
-        }, "increase_sku_for_order_event");
+            ApplicationServiceRegistry.getSkuApplicationService().handleCancel(deserialize);
+        }, "cancel_decrease_order_storage_event");
     }
 
     @EventListener(ApplicationReadyEvent.class)

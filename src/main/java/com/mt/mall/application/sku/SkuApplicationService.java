@@ -206,8 +206,8 @@ public class SkuApplicationService {
     @SubscribeForEvent
     @Transactional
     public void handleDecreaseSkuChange(SkuPatchCommandEvent event) {
-        String topic = "decrease_sku_for_order_reply_event";
-        log.debug("consuming ProductPatchBatched with id {}", event.getId());
+        String topic = "decrease_order_storage_reply_event";
+        log.debug("consuming decrease_order_storage_reply_event with id {}", event.getId());
         try {
             patchBatch(event.getSkuCommands(), event.getId().toString());
             DomainEventPublisher.instance().publish(new SkuPatchedReplyEvent(true, event.getTaskId(), topic));
@@ -219,9 +219,11 @@ public class SkuApplicationService {
 
     @SubscribeForEvent
     @Transactional
-    public void handleIncreaseSkuChange(SkuPatchCommandEvent event) {
-        String topic = "increase_sku_for_order_reply_event";
-        log.debug("consuming ProductPatchBatched with id {}", event.getId());
+    public void handleCancel(SkuPatchCommandEvent event) {
+        //@todo apply redis lock
+
+        String topic = "cancel_decrease_order_storage_reply_event";
+        log.debug("consuming cancel_decrease_order_storage_reply_event with id {}", event.getId());
         try {
             patchBatch(event.getSkuCommands(), event.getId().toString());
             DomainEventPublisher.instance().publish(new SkuPatchedReplyEvent(true, event.getTaskId(), topic));
