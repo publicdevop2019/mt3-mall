@@ -21,7 +21,7 @@ import com.mt.mall.domain.model.product.event.ProductSkuUpdated;
 import com.mt.mall.domain.model.sku.Sku;
 import com.mt.mall.domain.model.sku.SkuId;
 import com.mt.mall.domain.model.sku.SkuQuery;
-import com.mt.mall.domain.model.sku.event.SkuPatchCommandEvent;
+import com.mt.mall.application.sku.command.InternalSkuPatchCommand;
 import com.mt.mall.domain.model.sku.event.SkuPatchedReplyEvent;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -205,21 +205,20 @@ public class SkuApplicationService {
 
     @SubscribeForEvent
     @Transactional
-    public void handleDecreaseSkuChange(SkuPatchCommandEvent event) {
-        String topic = "decrease_order_storage_reply_event";
-        log.debug("consuming decrease_order_storage_reply_event with id {}", event.getId());
+    public void handle(InternalSkuPatchCommand event) {
+        log.debug("consuming {}", event);
         try {
             patchBatch(event.getSkuCommands(), event.getId().toString());
-            DomainEventPublisher.instance().publish(new SkuPatchedReplyEvent(true, event.getTaskId(), topic));
+            DomainEventPublisher.instance().publish(new SkuPatchedReplyEvent(true, event.getTaskId(), event.getReplyTopic()));
         } catch (Exception e) {
             log.warn("ignore exception");
-            DomainEventPublisher.instance().publish(new SkuPatchedReplyEvent(false, event.getTaskId(), topic));
+            DomainEventPublisher.instance().publish(new SkuPatchedReplyEvent(false, event.getTaskId(), event.getReplyTopic()));
         }
     }
 
     @SubscribeForEvent
     @Transactional
-    public void handleCancel(SkuPatchCommandEvent event) {
+    public void handleCancel(InternalSkuPatchCommand event) {
         //@todo apply redis lock
 
         String topic = "cancel_decrease_order_storage_reply_event";

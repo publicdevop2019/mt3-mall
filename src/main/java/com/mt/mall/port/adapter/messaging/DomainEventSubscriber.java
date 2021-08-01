@@ -4,7 +4,8 @@ import com.mt.common.domain.CommonDomainRegistry;
 import com.mt.common.domain.model.restful.exception.AggregateOutdatedException;
 import com.mt.common.domain.model.sql.builder.UpdateQueryBuilder;
 import com.mt.mall.application.ApplicationServiceRegistry;
-import com.mt.mall.domain.model.sku.event.SkuPatchCommandEvent;
+import com.mt.mall.application.sku.command.InternalSkuPatchCommand;
+import com.mt.mall.infrastructure.AppConstant;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.context.event.ApplicationReadyEvent;
@@ -20,9 +21,9 @@ import static com.mt.mall.domain.model.tag.event.TagCriticalFieldChanged.TOPIC_T
 @Component
 public class DomainEventSubscriber {
     private static final String SKU_QUEUE_NAME = "sku_queue";
-    private static final String SKU_EX_QUEUE_NAME = "decrease_sku_for_order_event_mall_handler";
-    private static final String SKU_EX_QUEUE_NAME3 = "cancel_decrease_sku_for_order_event_mall_handler";
     private static final String META_QUEUE_NAME = "meta_queue";
+    private static final String SKU_EX_QUEUE_NAME = AppConstant.DECREASE_ORDER_STORAGE_EVENT+AppConstant.APP_HANDLER;
+    private static final String SKU_EX_QUEUE_NAME2 = AppConstant.CANCEL_DECREASE_ORDER_STORAGE_EVENT+AppConstant.APP_HANDLER;
     @Value("${spring.application.name}")
     private String appName;
     @Value("${mt.app.name.mt15}")
@@ -41,28 +42,28 @@ public class DomainEventSubscriber {
     }
 
     @EventListener(ApplicationReadyEvent.class)
-    private void skuExternalListener() {
-        CommonDomainRegistry.getEventStreamService().subscribe(sagaName, false, SKU_EX_QUEUE_NAME, (event) -> {
-            log.debug("handling event with id {}", event.getId());
-            SkuPatchCommandEvent deserialize = CommonDomainRegistry.getCustomObjectSerializer().deserialize(event.getEventBody(), SkuPatchCommandEvent.class);
-            ApplicationServiceRegistry.getSkuApplicationService().handleDecreaseSkuChange(deserialize);
-        }, "decrease_order_storage_event");
-    }
-
-    @EventListener(ApplicationReadyEvent.class)
-    private void skuExternalListener3() {
-        CommonDomainRegistry.getEventStreamService().subscribe(sagaName, false, SKU_EX_QUEUE_NAME3, (event) -> {
-            log.debug("handling event with id {}", event.getId());
-            SkuPatchCommandEvent deserialize = CommonDomainRegistry.getCustomObjectSerializer().deserialize(event.getEventBody(), SkuPatchCommandEvent.class);
-            ApplicationServiceRegistry.getSkuApplicationService().handleCancel(deserialize);
-        }, "cancel_decrease_order_storage_event");
-    }
-
-    @EventListener(ApplicationReadyEvent.class)
     private void metaChangeListener() {
         CommonDomainRegistry.getEventStreamService().subscribe(appName, true, META_QUEUE_NAME, (event) -> {
             ApplicationServiceRegistry.getMetaApplicationService().handleChange(event);
         }, TOPIC_TAG, TOPIC_PRODUCT, TOPIC_CATALOG, TOPIC_FILTER);
+    }
+
+    @EventListener(ApplicationReadyEvent.class)
+    private void skuExternalListener() {
+        CommonDomainRegistry.getEventStreamService().subscribe(sagaName, false, SKU_EX_QUEUE_NAME, (event) -> {
+            log.debug("handling event with id {}", event.getId());
+            InternalSkuPatchCommand deserialize = CommonDomainRegistry.getCustomObjectSerializer().deserialize(event.getEventBody(), InternalSkuPatchCommand.class);
+            ApplicationServiceRegistry.getSkuApplicationService().handle(deserialize);
+        }, AppConstant.DECREASE_ORDER_STORAGE_EVENT);
+    }
+
+    @EventListener(ApplicationReadyEvent.class)
+    private void skuExternalListener3() {
+        CommonDomainRegistry.getEventStreamService().subscribe(sagaName, false, SKU_EX_QUEUE_NAME2, (event) -> {
+            log.debug("handling event with id {}", event.getId());
+            InternalSkuPatchCommand deserialize = CommonDomainRegistry.getCustomObjectSerializer().deserialize(event.getEventBody(), InternalSkuPatchCommand.class);
+            ApplicationServiceRegistry.getSkuApplicationService().handleCancel(deserialize);
+        }, AppConstant.CANCEL_DECREASE_ORDER_STORAGE_EVENT);
     }
 
 }
