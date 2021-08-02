@@ -205,30 +205,27 @@ public class SkuApplicationService {
 
     @SubscribeForEvent
     @Transactional
-    public void handle(InternalSkuPatchCommand event) {
+    public void handle(InternalSkuPatchCommand event,String replyTopic) {
         log.debug("consuming {}", event);
         try {
             patchBatch(event.getSkuCommands(), event.getId().toString());
-            DomainEventPublisher.instance().publish(new SkuPatchedReplyEvent(true, event.getTaskId(), event.getReplyTopic()));
+            DomainEventPublisher.instance().publish(new SkuPatchedReplyEvent(true, event.getTaskId(), replyTopic));
         } catch (Exception e) {
             log.warn("ignore exception");
-            DomainEventPublisher.instance().publish(new SkuPatchedReplyEvent(false, event.getTaskId(), event.getReplyTopic()));
+            DomainEventPublisher.instance().publish(new SkuPatchedReplyEvent(false, event.getTaskId(), replyTopic));
         }
     }
 
     @SubscribeForEvent
     @Transactional
-    public void handleCancel(InternalSkuPatchCommand event) {
-        //@todo apply redis lock
-
-        String topic = "cancel_decrease_order_storage_reply_event";
-        log.debug("consuming cancel_decrease_order_storage_reply_event with id {}", event.getId());
+    public void handleCancel(InternalSkuPatchCommand event,String replyTopic) {
+        //@todo implement cancel logic
+        log.debug("consuming {}", event);
         try {
-            patchBatch(event.getSkuCommands(), event.getId().toString());
-            DomainEventPublisher.instance().publish(new SkuPatchedReplyEvent(true, event.getTaskId(), topic));
+            DomainEventPublisher.instance().publish(new SkuPatchedReplyEvent(true, event.getTaskId(), replyTopic));
         } catch (Exception e) {
             log.warn("ignore exception");
-            DomainEventPublisher.instance().publish(new SkuPatchedReplyEvent(false, event.getTaskId(), topic));
+            DomainEventPublisher.instance().publish(new SkuPatchedReplyEvent(false, event.getTaskId(), replyTopic));
         }
     }
 }

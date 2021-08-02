@@ -12,6 +12,5 @@ import java.util.List;
 public class InternalSkuPatchCommand extends ProductEvent {
     private List<PatchCommand> skuCommands;
     private String changeId;
-    private String replyTopic;
     private long taskId;
 }
