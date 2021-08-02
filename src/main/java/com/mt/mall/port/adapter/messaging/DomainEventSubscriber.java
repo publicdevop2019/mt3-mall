@@ -57,7 +57,7 @@ public class DomainEventSubscriber {
     @EventListener(ApplicationReadyEvent.class)
     private void skuExternalListener() {
         CommonDomainRegistry.getEventStreamService().subscribe(sagaName, false, SKU_EX_QUEUE_NAME, (event) -> {
-            log.debug("handling event with id {}", event.getId());
+            log.debug("handling {} with id {}",AppConstant.DECREASE_ORDER_STORAGE_FOR_CREATE_REPLY_EVENT, event.getId());
             InternalSkuPatchCommand deserialize = CommonDomainRegistry.getCustomObjectSerializer().deserialize(event.getEventBody(), InternalSkuPatchCommand.class);
             ApplicationServiceRegistry.getSkuApplicationService().handle(deserialize,
                     AppConstant.DECREASE_ORDER_STORAGE_FOR_CREATE_REPLY_EVENT);
@@ -67,7 +67,7 @@ public class DomainEventSubscriber {
     @EventListener(ApplicationReadyEvent.class)
     private void skuExternalListener2() {
         CommonDomainRegistry.getEventStreamService().subscribe(sagaName, false, SKU_EX_QUEUE_NAME2, (event) -> {
-            log.debug("handling event with id {}", event.getId());
+            log.debug("handling {} with id {}",AppConstant.CANCEL_DECREASE_ORDER_STORAGE_FOR_CREATE_EVENT, event.getId());
             InternalSkuPatchCommand deserialize = CommonDomainRegistry.getCustomObjectSerializer().deserialize(event.getEventBody(), InternalSkuPatchCommand.class);
             ApplicationServiceRegistry.getSkuApplicationService().handleCancel(deserialize,
                     AppConstant.CANCEL_DECREASE_ORDER_STORAGE_FOR_CREATE_REPLY_EVENT);
@@ -77,7 +77,7 @@ public class DomainEventSubscriber {
     @EventListener(ApplicationReadyEvent.class)
     private void skuExternalListener3() {
         CommonDomainRegistry.getEventStreamService().subscribe(sagaName, false, SKU_EX_QUEUE_NAME3, (event) -> {
-            log.debug("handling event with id {}", event.getId());
+            log.debug("handling {} with id {}",AppConstant.DECREASE_ACTUAL_STORAGE_FOR_CONCLUDE_EVENT, event.getId());
             InternalSkuPatchCommand deserialize = CommonDomainRegistry.getCustomObjectSerializer().deserialize(event.getEventBody(), InternalSkuPatchCommand.class);
             ApplicationServiceRegistry.getSkuApplicationService().handle(deserialize,
                     AppConstant.DECREASE_ACTUAL_STORAGE_FOR_CONCLUDE_REPLY_EVENT);
@@ -86,7 +86,7 @@ public class DomainEventSubscriber {
     @EventListener(ApplicationReadyEvent.class)
     private void skuExternalListener4() {
         CommonDomainRegistry.getEventStreamService().subscribe(sagaName, false, SKU_EX_QUEUE_NAME4, (event) -> {
-            log.debug("handling event with id {}", event.getId());
+            log.debug("handling {} with id {}",AppConstant.INCREASE_ORDER_STORAGE_FOR_RECYCLE_EVENT, event.getId());
             InternalSkuPatchCommand deserialize = CommonDomainRegistry.getCustomObjectSerializer().deserialize(event.getEventBody(), InternalSkuPatchCommand.class);
             ApplicationServiceRegistry.getSkuApplicationService().handle(deserialize,
                     AppConstant.INCREASE_ORDER_STORAGE_FOR_RECYCLE_REPLY_EVENT);
@@ -95,7 +95,7 @@ public class DomainEventSubscriber {
     @EventListener(ApplicationReadyEvent.class)
     private void skuExternalListener5() {
         CommonDomainRegistry.getEventStreamService().subscribe(sagaName, false, SKU_EX_QUEUE_NAME5, (event) -> {
-            log.debug("handling event with id {}", event.getId());
+            log.debug("handling {} with id {}",AppConstant.DECREASE_ORDER_STORAGE_FOR_RESERVE_EVENT, event.getId());
             InternalSkuPatchCommand deserialize = CommonDomainRegistry.getCustomObjectSerializer().deserialize(event.getEventBody(), InternalSkuPatchCommand.class);
             ApplicationServiceRegistry.getSkuApplicationService().handle(deserialize,
                     AppConstant.DECREASE_ORDER_STORAGE_FOR_RESERVE_REPLY_EVENT);
@@ -104,7 +104,7 @@ public class DomainEventSubscriber {
     @EventListener(ApplicationReadyEvent.class)
     private void skuExternalListener6() {
         CommonDomainRegistry.getEventStreamService().subscribe(sagaName, false, SKU_EX_QUEUE_NAME6, (event) -> {
-            log.debug("handling event with id {}", event.getId());
+            log.debug("handling {} with id {}",AppConstant.CANCEL_DECREASE_ACTUAL_STORAGE_FOR_CONCLUDE_EVENT, event.getId());
             InternalSkuPatchCommand deserialize = CommonDomainRegistry.getCustomObjectSerializer().deserialize(event.getEventBody(), InternalSkuPatchCommand.class);
             ApplicationServiceRegistry.getSkuApplicationService().handleCancel(deserialize,
                     AppConstant.CANCEL_DECREASE_ACTUAL_STORAGE_FOR_CONCLUDE_REPLY_EVENT);
@@ -113,7 +113,7 @@ public class DomainEventSubscriber {
     @EventListener(ApplicationReadyEvent.class)
     private void skuExternalListener7() {
         CommonDomainRegistry.getEventStreamService().subscribe(sagaName, false, SKU_EX_QUEUE_NAME7, (event) -> {
-            log.debug("handling event with id {}", event.getId());
+            log.debug("handling {} with id {}",AppConstant.CANCEL_INCREASE_ORDER_STORAGE_FOR_RECYCLE_EVENT, event.getId());
             InternalSkuPatchCommand deserialize = CommonDomainRegistry.getCustomObjectSerializer().deserialize(event.getEventBody(), InternalSkuPatchCommand.class);
             ApplicationServiceRegistry.getSkuApplicationService().handleCancel(deserialize,
                     AppConstant.CANCEL_INCREASE_ORDER_STORAGE_FOR_RECYCLE_REPLY_EVENT);
@@ -122,7 +122,7 @@ public class DomainEventSubscriber {
     @EventListener(ApplicationReadyEvent.class)
     private void skuExternalListener8() {
         CommonDomainRegistry.getEventStreamService().subscribe(sagaName, false, SKU_EX_QUEUE_NAME8, (event) -> {
-            log.debug("handling event with id {}", event.getId());
+            log.debug("handling {} with id {}",AppConstant.CANCEL_DECREASE_ORDER_STORAGE_FOR_RESERVE_EVENT, event.getId());
             InternalSkuPatchCommand deserialize = CommonDomainRegistry.getCustomObjectSerializer().deserialize(event.getEventBody(), InternalSkuPatchCommand.class);
             ApplicationServiceRegistry.getSkuApplicationService().handleCancel(deserialize,
                     AppConstant.CANCEL_DECREASE_ORDER_STORAGE_FOR_RESERVE_REPLY_EVENT);
