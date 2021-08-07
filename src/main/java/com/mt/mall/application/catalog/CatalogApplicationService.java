@@ -30,8 +30,8 @@ import java.util.stream.Collectors;
 public class CatalogApplicationService {
     @SubscribeForEvent
     @Transactional
-    public String create(CreateCatalogCommand command, String operationId) {
-        return ApplicationServiceRegistry.getIdempotentWrapper().idempotent(operationId,
+    public String create(CreateCatalogCommand command, String changeId) {
+        return ApplicationServiceRegistry.getIdempotentWrapper().idempotent(changeId,
                 (change) -> {
                     CatalogId catalogId = new CatalogId();
                     DomainRegistry.getCatalogService().create(
