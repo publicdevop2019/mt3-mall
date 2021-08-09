@@ -2,6 +2,8 @@ package com.mt.mall.application.sku;
 
 import com.github.fge.jsonpatch.JsonPatch;
 import com.mt.common.domain.CommonDomainRegistry;
+import com.mt.common.domain.model.distributed_lock.DTXDistLock;
+import com.mt.common.domain.model.distributed_lock.SagaDistLock;
 import com.mt.common.domain.model.domain_event.DomainEventPublisher;
 import com.mt.common.domain.model.domain_event.StoredEvent;
 import com.mt.common.domain.model.domain_event.SubscribeForEvent;
@@ -142,7 +144,7 @@ public class SkuApplicationService {
 
     @SubscribeForEvent
     public void patchBatch(List<PatchCommand> commands, String changeId) {
-        List<PatchCommand> patchCommands = List.copyOf(CommonDomainRegistry.getCustomObjectSerializer().deepCopyCollection(commands));
+        List<PatchCommand> patchCommands = List.copyOf(CommonDomainRegistry.getCustomObjectSerializer().deepCopyCollection(commands,PatchCommand.class));
         TransactionTemplate transactionTemplate = new TransactionTemplate(transactionManager);
         try {
             transactionTemplate.execute(new TransactionCallbackWithoutResult() {
@@ -206,9 +208,8 @@ public class SkuApplicationService {
     @SubscribeForEvent
     @Transactional
     public void handle(InternalSkuPatchCommand event,String replyTopic) {
-        log.debug("consuming {}", event);
         try {
-            patchBatch(event.getSkuCommands(), event.getId().toString());
+            patchBatch(event.getSkuCommands(), event.getChangeId());
             DomainEventPublisher.instance().publish(new SkuPatchedReplyEvent(true, event.getTaskId(), replyTopic));
         } catch (Exception e) {
             log.warn("ignore exception");
@@ -217,15 +218,30 @@ public class SkuApplicationService {
     }
 
     @SubscribeForEvent
-    @Transactional
+    @SagaDistLock(keyExpression = "#p0.changeId")
     public void handleCancel(InternalSkuPatchCommand event,String replyTopic) {
-        //@todo implement cancel logic
-        log.debug("consuming {}", event);
+        log.debug("start of handle cancel for {}",event.getChangeId());
+            List<PatchCommand> commands = PatchCommand.buildRollbackCommand(event.getSkuCommands());
+        List<PatchCommand> patchCommands = List.copyOf(CommonDomainRegistry.getCustomObjectSerializer().deepCopyCollection(commands,PatchCommand.class));
+        TransactionTemplate transactionTemplate = new TransactionTemplate(transactionManager);
         try {
-            DomainEventPublisher.instance().publish(new SkuPatchedReplyEvent(true, event.getTaskId(), replyTopic));
-        } catch (Exception e) {
-            log.warn("ignore exception");
+            transactionTemplate.execute(new TransactionCallbackWithoutResult() {
+                @Override
+                protected void doInTransactionWithoutResult(TransactionStatus status) {
+                    ApplicationServiceRegistry.getIdempotentWrapper().idempotent(event.getChangeId(), (ignored) -> {
+                        DomainRegistry.getSkuRepository().patchBatch(patchCommands);
+                        DomainEventPublisher.instance().publish(new SkuPatchedReplyEvent(true, event.getTaskId(), replyTopic));
+                        return null;
+                    }, "Sku");
+                }
+            });
+        } catch (UpdateQueryBuilder.PatchCommandExpectNotMatchException ex) {
+            log.debug("unable to update sku due to expect not match ", ex);
+            //directly publish msg to stream
+            SkuChangeFailed skuChangeFailed = new SkuChangeFailed(null, patchCommands);
+            CommonDomainRegistry.getEventStreamService().next(appName, skuChangeFailed.isInternal(), skuChangeFailed.getTopic(), new StoredEvent(skuChangeFailed));
             DomainEventPublisher.instance().publish(new SkuPatchedReplyEvent(false, event.getTaskId(), replyTopic));
         }
+
     }
 }

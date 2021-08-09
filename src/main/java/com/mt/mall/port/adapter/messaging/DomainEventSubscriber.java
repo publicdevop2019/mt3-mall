@@ -29,7 +29,7 @@ public class DomainEventSubscriber {
     private String sagaName;
 
     @EventListener(ApplicationReadyEvent.class)
-    private void skuListener() {
+    private void listener() {
         CommonDomainRegistry.getEventStreamService().subscribe(appName, true, SKU_QUEUE_NAME, (event) -> {
             try {
                 ApplicationServiceRegistry.getSkuApplicationService().handleChange(event);
@@ -41,14 +41,14 @@ public class DomainEventSubscriber {
     }
 
     @EventListener(ApplicationReadyEvent.class)
-    private void metaChangeListener() {
+    private void listener1() {
         CommonDomainRegistry.getEventStreamService().subscribe(appName, true, META_QUEUE_NAME, (event) -> {
             ApplicationServiceRegistry.getMetaApplicationService().handleChange(event);
         }, TOPIC_TAG, TOPIC_PRODUCT, TOPIC_CATALOG, TOPIC_FILTER);
     }
 
     @EventListener(ApplicationReadyEvent.class)
-    private void skuExternalListener() {
+    private void listener2() {
         CommonDomainRegistry.getEventStreamService().of(sagaName, false,AppConstant.DECREASE_ORDER_STORAGE_FOR_CREATE_EVENT,(event) -> {
             InternalSkuPatchCommand deserialize = CommonDomainRegistry.getCustomObjectSerializer().deserialize(event.getEventBody(), InternalSkuPatchCommand.class);
             ApplicationServiceRegistry.getSkuApplicationService().handle(deserialize,
@@ -57,7 +57,7 @@ public class DomainEventSubscriber {
     }
 
     @EventListener(ApplicationReadyEvent.class)
-    private void skuExternalListener2() {
+    private void listener3() {
         CommonDomainRegistry.getEventStreamService().cancelOf(sagaName, false,  AppConstant.DECREASE_ORDER_STORAGE_FOR_CREATE_EVENT, (event) -> {
             InternalSkuPatchCommand deserialize = CommonDomainRegistry.getCustomObjectSerializer().deserialize(event.getEventBody(), InternalSkuPatchCommand.class);
             ApplicationServiceRegistry.getSkuApplicationService().handleCancel(deserialize,
@@ -66,7 +66,7 @@ public class DomainEventSubscriber {
     }
 
     @EventListener(ApplicationReadyEvent.class)
-    private void skuExternalListener3() {
+    private void listener4() {
         CommonDomainRegistry.getEventStreamService().of(sagaName, false, AppConstant.DECREASE_ACTUAL_STORAGE_FOR_CONCLUDE_EVENT, (event) -> {
             InternalSkuPatchCommand deserialize = CommonDomainRegistry.getCustomObjectSerializer().deserialize(event.getEventBody(), InternalSkuPatchCommand.class);
             ApplicationServiceRegistry.getSkuApplicationService().handle(deserialize,
@@ -74,7 +74,7 @@ public class DomainEventSubscriber {
         });
     }
     @EventListener(ApplicationReadyEvent.class)
-    private void skuExternalListener4() {
+    private void listener5() {
         CommonDomainRegistry.getEventStreamService().of(sagaName, false, AppConstant.INCREASE_ORDER_STORAGE_FOR_RECYCLE_EVENT, (event) -> {
             InternalSkuPatchCommand deserialize = CommonDomainRegistry.getCustomObjectSerializer().deserialize(event.getEventBody(), InternalSkuPatchCommand.class);
             ApplicationServiceRegistry.getSkuApplicationService().handle(deserialize,
@@ -82,7 +82,7 @@ public class DomainEventSubscriber {
         });
     }
     @EventListener(ApplicationReadyEvent.class)
-    private void skuExternalListener5() {
+    private void listener6() {
         CommonDomainRegistry.getEventStreamService().of(sagaName, false, AppConstant.DECREASE_ORDER_STORAGE_FOR_RESERVE_EVENT, (event) -> {
             InternalSkuPatchCommand deserialize = CommonDomainRegistry.getCustomObjectSerializer().deserialize(event.getEventBody(), InternalSkuPatchCommand.class);
             ApplicationServiceRegistry.getSkuApplicationService().handle(deserialize,
@@ -90,7 +90,7 @@ public class DomainEventSubscriber {
         });
     }
     @EventListener(ApplicationReadyEvent.class)
-    private void skuExternalListener6() {
+    private void listener7() {
         CommonDomainRegistry.getEventStreamService().cancelOf(sagaName, false, AppConstant.DECREASE_ACTUAL_STORAGE_FOR_CONCLUDE_EVENT, (event) -> {
             InternalSkuPatchCommand deserialize = CommonDomainRegistry.getCustomObjectSerializer().deserialize(event.getEventBody(), InternalSkuPatchCommand.class);
             ApplicationServiceRegistry.getSkuApplicationService().handleCancel(deserialize,
@@ -98,7 +98,7 @@ public class DomainEventSubscriber {
         });
     }
     @EventListener(ApplicationReadyEvent.class)
-    private void skuExternalListener7() {
+    private void listener8() {
         CommonDomainRegistry.getEventStreamService().cancelOf(sagaName, false, AppConstant.INCREASE_ORDER_STORAGE_FOR_RECYCLE_EVENT, (event) -> {
             InternalSkuPatchCommand deserialize = CommonDomainRegistry.getCustomObjectSerializer().deserialize(event.getEventBody(), InternalSkuPatchCommand.class);
             ApplicationServiceRegistry.getSkuApplicationService().handleCancel(deserialize,
@@ -106,7 +106,7 @@ public class DomainEventSubscriber {
         });
     }
     @EventListener(ApplicationReadyEvent.class)
-    private void skuExternalListener8() {
+    private void listener9() {
         CommonDomainRegistry.getEventStreamService().cancelOf(sagaName, false, AppConstant.DECREASE_ORDER_STORAGE_FOR_RESERVE_EVENT, (event) -> {
             InternalSkuPatchCommand deserialize = CommonDomainRegistry.getCustomObjectSerializer().deserialize(event.getEventBody(), InternalSkuPatchCommand.class);
             ApplicationServiceRegistry.getSkuApplicationService().handleCancel(deserialize,
