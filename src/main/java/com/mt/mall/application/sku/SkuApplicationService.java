@@ -41,6 +41,7 @@ import java.util.Set;
 @Slf4j
 @Service
 public class SkuApplicationService {
+    public static final String AGGREGATE_NAME = "Sku";
     @Value("${spring.application.name}")
     private String appName;
     @Autowired
@@ -68,7 +69,7 @@ public class SkuApplicationService {
                     );
                     change.setReturnValue(skuId.getDomainId());
                     return skuId.getDomainId();
-                }, "Sku"
+                }, AGGREGATE_NAME
         );
     }
 
@@ -100,7 +101,7 @@ public class SkuApplicationService {
                 DomainRegistry.getSkuRepository().add(sku);
             }
             return null;
-        }, "Sku");
+        }, AGGREGATE_NAME);
     }
 
     @SubscribeForEvent
@@ -118,7 +119,7 @@ public class SkuApplicationService {
                 DomainRegistry.getSkuRepository().remove(sku);
             }
             return null;
-        }, "Sku");
+        }, AGGREGATE_NAME);
     }
 
     @SubscribeForEvent
@@ -138,7 +139,7 @@ public class SkuApplicationService {
                 );
             }
             return null;
-        }, "Sku");
+        }, AGGREGATE_NAME);
     }
 
     @SubscribeForEvent
@@ -152,7 +153,7 @@ public class SkuApplicationService {
                     ApplicationServiceRegistry.getIdempotentWrapper().idempotent(changeId, (ignored) -> {
                         DomainRegistry.getSkuRepository().patchBatch(commands);
                         return null;
-                    }, "Sku");
+                    }, AGGREGATE_NAME);
                 }
             });
         } catch (UpdateQueryBuilder.PatchCommandExpectNotMatchException ex) {
@@ -189,7 +190,7 @@ public class SkuApplicationService {
                 patchBatch(deserialize.getPatchCommands(), event.getId().toString());
             }
             return null;
-        }, "Sku");
+        }, AGGREGATE_NAME);
     }
 
     private void remove(Set<SkuId> removeSkuCommands, String changeId) {
@@ -206,7 +207,7 @@ public class SkuApplicationService {
 
     @SubscribeForEvent
     @Transactional
-    @SagaDistLock(keyExpression = "#p0.changeId")
+    @SagaDistLock(keyExpression = "#p0.changeId",aggregateName = AGGREGATE_NAME)
     public void handle(InternalSkuPatchCommand event, String replyTopic) {
         List<PatchCommand> commands = event.getSkuCommands();
         List<PatchCommand> patchCommands = List.copyOf(CommonDomainRegistry.getCustomObjectSerializer().deepCopyCollection(commands, PatchCommand.class));
@@ -217,9 +218,9 @@ public class SkuApplicationService {
                 protected void doInTransactionWithoutResult(TransactionStatus status) {
                     ApplicationServiceRegistry.getIdempotentWrapper().idempotent(event.getChangeId(), (ignored) -> {
                         DomainRegistry.getSkuRepository().patchBatch(commands);
+                        DomainEventPublisher.instance().publish(new SkuPatchedReplyEvent(true, event.getTaskId(), replyTopic));
                         return null;
-                    }, "Sku");
-                    DomainEventPublisher.instance().publish(new SkuPatchedReplyEvent(true, event.getTaskId(), replyTopic));
+                    }, AGGREGATE_NAME);
                 }
             });
         } catch (UpdateQueryBuilder.PatchCommandExpectNotMatchException ex) {
@@ -232,7 +233,7 @@ public class SkuApplicationService {
     }
 
     @SubscribeForEvent
-    @SagaDistLock(keyExpression = "#p0.changeId")
+    @SagaDistLock(keyExpression = "#p0.changeId",aggregateName = AGGREGATE_NAME)
     public void handleCancel(InternalSkuPatchCommand event, String replyTopic) {
         log.debug("start of handle cancel for {}", event.getChangeId());
         List<PatchCommand> commands = PatchCommand.buildRollbackCommand(event.getSkuCommands());
@@ -244,9 +245,9 @@ public class SkuApplicationService {
                 protected void doInTransactionWithoutResult(TransactionStatus status) {
                     ApplicationServiceRegistry.getIdempotentWrapper().idempotent(event.getChangeId(), (ignored) -> {
                         DomainRegistry.getSkuRepository().patchBatch(patchCommands);
+                        DomainEventPublisher.instance().publish(new SkuPatchedReplyEvent(true, event.getTaskId(), replyTopic));
                         return null;
-                    }, "Sku");
-                    DomainEventPublisher.instance().publish(new SkuPatchedReplyEvent(true, event.getTaskId(), replyTopic));
+                    }, AGGREGATE_NAME);
                 }
 
             });
