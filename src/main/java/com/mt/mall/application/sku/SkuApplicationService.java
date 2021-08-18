@@ -207,7 +207,7 @@ public class SkuApplicationService {
 
     @SubscribeForEvent
     @Transactional
-    @SagaDistLock(keyExpression = "#p0.changeId",aggregateName = AGGREGATE_NAME)
+    @SagaDistLock(keyExpression = "#p0.changeId", aggregateName = AGGREGATE_NAME)
     public void handle(InternalSkuPatchCommand event, String replyTopic) {
         List<PatchCommand> commands = event.getSkuCommands();
         List<PatchCommand> patchCommands = List.copyOf(CommonDomainRegistry.getCustomObjectSerializer().deepCopyCollection(commands, PatchCommand.class));
@@ -216,7 +216,7 @@ public class SkuApplicationService {
             transactionTemplate.execute(new TransactionCallbackWithoutResult() {
                 @Override
                 protected void doInTransactionWithoutResult(TransactionStatus status) {
-                    ApplicationServiceRegistry.getIdempotentWrapper().idempotent(event.getChangeId(), (ignored) -> {
+                    ApplicationServiceRegistry.getIdempotentWrapper().idempotentMsg(event.getChangeId(), (ignored) -> {
                         DomainRegistry.getSkuRepository().patchBatch(commands);
                         DomainEventPublisher.instance().publish(new SkuPatchedReplyEvent(true, event.getTaskId(), replyTopic));
                         return null;
@@ -233,7 +233,7 @@ public class SkuApplicationService {
     }
 
     @SubscribeForEvent
-    @SagaDistLock(keyExpression = "#p0.changeId",aggregateName = AGGREGATE_NAME)
+    @SagaDistLock(keyExpression = "#p0.changeId", aggregateName = AGGREGATE_NAME)
     public void handleCancel(InternalSkuPatchCommand event, String replyTopic) {
         log.debug("start of handle cancel for {}", event.getChangeId());
         List<PatchCommand> commands = PatchCommand.buildRollbackCommand(event.getSkuCommands());
@@ -243,8 +243,10 @@ public class SkuApplicationService {
             transactionTemplate.execute(new TransactionCallbackWithoutResult() {
                 @Override
                 protected void doInTransactionWithoutResult(TransactionStatus status) {
-                    ApplicationServiceRegistry.getIdempotentWrapper().idempotent(event.getChangeId(), (ignored) -> {
+                    ApplicationServiceRegistry.getIdempotentWrapper().idempotentMsgCancel(event.getChangeId(), (ignored) -> {
                         DomainRegistry.getSkuRepository().patchBatch(patchCommands);
+                        return null;
+                    }, (ignored) -> {
                         DomainEventPublisher.instance().publish(new SkuPatchedReplyEvent(true, event.getTaskId(), replyTopic));
                         return null;
                     }, AGGREGATE_NAME);
