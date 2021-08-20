@@ -218,6 +218,8 @@ public class SkuApplicationService {
                 protected void doInTransactionWithoutResult(TransactionStatus status) {
                     ApplicationServiceRegistry.getIdempotentWrapper().idempotentMsg(event.getChangeId(), (ignored) -> {
                         DomainRegistry.getSkuRepository().patchBatch(commands);
+                        return null;
+                    }, (ignored) -> {
                         DomainEventPublisher.instance().publish(new SkuPatchedReplyEvent(true, event.getTaskId(), replyTopic));
                         return null;
                     }, AGGREGATE_NAME);
@@ -243,7 +245,7 @@ public class SkuApplicationService {
             transactionTemplate.execute(new TransactionCallbackWithoutResult() {
                 @Override
                 protected void doInTransactionWithoutResult(TransactionStatus status) {
-                    ApplicationServiceRegistry.getIdempotentWrapper().idempotentMsgCancel(event.getChangeId(), (ignored) -> {
+                    ApplicationServiceRegistry.getIdempotentWrapper().idempotentMsg(event.getChangeId(), (ignored) -> {
                         DomainRegistry.getSkuRepository().patchBatch(patchCommands);
                         return null;
                     }, (ignored) -> {
