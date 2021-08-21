@@ -220,7 +220,7 @@ public class SkuApplicationService {
                         DomainRegistry.getSkuRepository().patchBatch(commands);
                         return null;
                     }, (ignored) -> {
-                        DomainEventPublisher.instance().publish(new SkuPatchedReplyEvent(true, event.getTaskId(), replyTopic));
+                        DomainEventPublisher.instance().publish(new SkuPatchedReplyEvent(ignored.isEmptyOpt(), event.getTaskId(), replyTopic));
                         return null;
                     }, AGGREGATE_NAME);
                 }
@@ -249,7 +249,7 @@ public class SkuApplicationService {
                         DomainRegistry.getSkuRepository().patchBatch(patchCommands);
                         return null;
                     }, (ignored) -> {
-                        DomainEventPublisher.instance().publish(new SkuPatchedReplyEvent(true, event.getTaskId(), replyTopic));
+                        DomainEventPublisher.instance().publish(new SkuPatchedReplyEvent(ignored.isEmptyOpt(), event.getTaskId(), replyTopic));
                         return null;
                     }, AGGREGATE_NAME);
                 }

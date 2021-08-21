@@ -7,11 +7,11 @@ import lombok.Setter;
 @Getter
 @Setter
 public class SkuPatchedReplyEvent extends DomainEvent {
-    private boolean success;
+    private boolean emptyOpt;
     private long taskId;
 
-    public SkuPatchedReplyEvent(boolean result, long taskId,String topic) {
-        setSuccess(result);
+    public SkuPatchedReplyEvent(boolean emptyOpt, long taskId,String topic) {
+        setEmptyOpt(emptyOpt);
         setTaskId(taskId);
         setInternal(false);
         setTopic(topic);
