@@ -2,11 +2,12 @@ package com.mt.mall.application.sku;
 
 import com.github.fge.jsonpatch.JsonPatch;
 import com.mt.common.domain.CommonDomainRegistry;
+import com.mt.common.domain.model.constant.AppInfo;
 import com.mt.common.domain.model.distributed_lock.SagaDistLock;
 import com.mt.common.domain.model.domain_event.DomainEventPublisher;
 import com.mt.common.domain.model.domain_event.StoredEvent;
 import com.mt.common.domain.model.domain_event.SubscribeForEvent;
-import com.mt.common.domain.model.idempotent.event.SkuChangeFailed;
+import com.mt.common.domain.model.event.MallNotificationEvent;
 import com.mt.common.domain.model.restful.PatchCommand;
 import com.mt.common.domain.model.restful.SumPagedRep;
 import com.mt.common.domain.model.sql.builder.UpdateQueryBuilder;
@@ -37,6 +38,8 @@ import org.springframework.transaction.support.TransactionTemplate;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
+
+import static com.mt.common.domain.model.constant.AppInfo.EventName.MT3_SKU_UPDATE_FAILED;
 
 @Slf4j
 @Service
@@ -158,9 +161,7 @@ public class SkuApplicationService {
             });
         } catch (UpdateQueryBuilder.PatchCommandExpectNotMatchException ex) {
             log.debug("unable to update sku due to expect not match ", ex);
-            //directly publish msg to stream
-            SkuChangeFailed skuChangeFailed = new SkuChangeFailed(null, patchCommands);
-            CommonDomainRegistry.getEventStreamService().next(appName, skuChangeFailed.isInternal(), skuChangeFailed.getTopic(), new StoredEvent(skuChangeFailed));
+            notifyAdmin(patchCommands,changeId);
             throw ex;
         }
     }
@@ -210,7 +211,6 @@ public class SkuApplicationService {
     @SagaDistLock(keyExpression = "#p0.changeId", aggregateName = AGGREGATE_NAME)
     public void handle(InternalSkuPatchCommand event, String replyTopic) {
         List<PatchCommand> commands = event.getSkuCommands();
-        List<PatchCommand> patchCommands = List.copyOf(CommonDomainRegistry.getCustomObjectSerializer().deepCopyCollection(commands, PatchCommand.class));
         TransactionTemplate transactionTemplate = new TransactionTemplate(transactionManager);
         try {
             transactionTemplate.execute(new TransactionCallbackWithoutResult() {
@@ -227,9 +227,7 @@ public class SkuApplicationService {
             });
         } catch (UpdateQueryBuilder.PatchCommandExpectNotMatchException ex) {
             log.debug("unable to update sku due to expect not match ", ex);
-            //directly publish msg to stream
-            SkuChangeFailed skuChangeFailed = new SkuChangeFailed(null, patchCommands);
-            CommonDomainRegistry.getEventStreamService().next(appName, skuChangeFailed.isInternal(), skuChangeFailed.getTopic(), new StoredEvent(skuChangeFailed));
+            notifyAdmin(event);
             throw ex;
         }
     }
@@ -257,11 +255,35 @@ public class SkuApplicationService {
             });
         } catch (UpdateQueryBuilder.PatchCommandExpectNotMatchException ex) {
             log.debug("unable to update sku due to expect not match ", ex);
-            //directly publish msg to stream
-            SkuChangeFailed skuChangeFailed = new SkuChangeFailed(null, patchCommands);
-            CommonDomainRegistry.getEventStreamService().next(appName, skuChangeFailed.isInternal(), skuChangeFailed.getTopic(), new StoredEvent(skuChangeFailed));
+            notifyAdmin(event);
             throw ex;
         }
 
     }
+
+    private void notifyAdmin(InternalSkuPatchCommand event2) {
+        //directly publish msg to stream
+        MallNotificationEvent event = MallNotificationEvent.create(MT3_SKU_UPDATE_FAILED);
+        event.setChangeId(event2.getChangeId());
+        event.updateOrderId(event2.getOrderId());
+        event.addDetail(AppInfo.MISC.SKU_CHANGE_DETAIL,
+                CommonDomainRegistry.getCustomObjectSerializer().serialize(event2.getSkuCommands()));
+        StoredEvent storedEvent = new StoredEvent(event);
+        storedEvent.setIdExplicitly(CommonDomainRegistry.getUniqueIdGeneratorService().id());
+        CommonDomainRegistry.getEventStreamService().next(appName, event.isInternal(), event.getTopic(), storedEvent);
+    }
+
+    private void notifyAdmin(List<PatchCommand> patchCommands,String changeId) {
+        //directly publish msg to stream
+        MallNotificationEvent event = MallNotificationEvent.create(MT3_SKU_UPDATE_FAILED);
+        event.setChangeId(changeId);
+        event.addDetail(AppInfo.MISC.SKU_CHANGE_DETAIL,
+                CommonDomainRegistry.getCustomObjectSerializer().serialize(patchCommands));
+        event.addDetail(AppInfo.MISC.ADMIN_OPT,
+                AppInfo.MISC.ADMIN_OPT);
+        StoredEvent storedEvent = new StoredEvent(event);
+        storedEvent.setIdExplicitly(CommonDomainRegistry.getUniqueIdGeneratorService().id());
+        CommonDomainRegistry.getEventStreamService().next(appName, event.isInternal(), event.getTopic(), storedEvent);
+    }
+
 }
