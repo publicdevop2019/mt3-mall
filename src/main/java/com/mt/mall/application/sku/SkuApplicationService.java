@@ -265,7 +265,7 @@ public class SkuApplicationService {
         //directly publish msg to stream
         MallNotificationEvent event = MallNotificationEvent.create(MT3_SKU_UPDATE_FAILED);
         event.setChangeId(event2.getChangeId());
-        event.updateOrderId(event2.getOrderId());
+        event.setOrderId(event2.getOrderId());
         event.addDetail(AppInfo.MISC.SKU_CHANGE_DETAIL,
                 CommonDomainRegistry.getCustomObjectSerializer().serialize(event2.getSkuCommands()));
         StoredEvent storedEvent = new StoredEvent(event);
